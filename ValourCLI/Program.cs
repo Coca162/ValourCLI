@@ -45,11 +45,13 @@ namespace ValourCLI
 
             await Start(Authentication.Config.Email, Authentication.Config.Password);
 
+            WriteLine("Planets:");
             foreach (var planetCache in Cache.PlanetCache.Values)
             {
                 WriteLine(planetCache.Name);
             }
 
+            Write("Planet to enter: ");
             Planet planet;
             while (true)
             {
@@ -59,11 +61,13 @@ namespace ValourCLI
                 WriteLine("You are not in this planet!");
             }
 
+            WriteLine("Channels:");
             foreach (Channel channelCache in Cache.ChannelCache.Values.Where(x => x.Planet_Id == planet.Id))
             {
                 WriteLine(channelCache.Name);
             }
 
+            Write("Channel to enter: ");
             Channel channel;
             while (true)
             {
@@ -80,6 +84,7 @@ namespace ValourCLI
             while (true)
             {
                 await PostMessage(channel.Id, 735703679107072, ReadLine()).ConfigureAwait(false);
+                SetCursorPosition(0, CursorTop - 1);
             }
 
             await Task.Delay(-1);
@@ -94,7 +99,7 @@ namespace ValourCLI
             message.Planet = await message.GetPlanetAsync();
             CommandContext ctx = new();
             await ctx.Set(message);
-            WriteLine(ctx.Message.Content);
+            WriteLine($"{ctx.Member.Nickname} {ctx.Message.TimeSent.ToLocalTime().ToShortTimeString()}: {ctx.Message.Content}");
         }
 
         public static async Task Start(string email, string password)
