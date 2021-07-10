@@ -1,14 +1,10 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
-using Newtonsoft.Json.Schema.Generation;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using static System.Console;
-using static ValourCLI.Authentication;
 
 namespace ValourCLI
 {
@@ -34,7 +30,7 @@ namespace ValourCLI
 
         public static void Login()
         {
-            WriteLine("Detected no valid config file in this folder entering login");
+            WriteLine("Detected no valid config file in this folder\nEntering login...");
 
             string email;
             while (true)
