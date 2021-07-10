@@ -2,12 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 using Newtonsoft.Json.Schema.Generation;
-using System;
-using System.Globalization;
 using System.IO;
-using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Valour.Net.ValourClient;
 using static System.Console;
@@ -24,6 +19,8 @@ namespace ValourCLI
     class Program
     {
         public static ulong CurrentChannel { get; set; }
+        public static int InputLocation = 0;
+        public static Dictionary<PlanetMessage, int> messages = new();
 
         static async Task Main(string[] args)
         {
@@ -44,6 +41,8 @@ namespace ValourCLI
             else Login();
 
             await Start(Authentication.Config.Email, Authentication.Config.Password);
+
+            Clear();
 
             WriteLine("Planets:");
             foreach (var planetCache in Cache.PlanetCache.Values)
@@ -77,14 +76,20 @@ namespace ValourCLI
                 WriteLine("This channel does not exist!");
             }
 
+            Clear();
+
             await hubConnection.SendAsync("JoinPlanet", planet.Id, Token);
             await hubConnection.SendAsync("JoinChannel", channel.Id, Token);
             hubConnection.On<string>("Relay", OnRelay);
-            
+
             while (true)
             {
-                await PostMessage(channel.Id, 735703679107072, ReadLine()).ConfigureAwait(false);
-                SetCursorPosition(0, CursorTop - 1);
+                SetCursorPosition(0, WindowHeight + InputLocation);
+                string msg = ReadLine().Replace(@"\n", "\n").Replace("\\\n", @"\n");
+                SetCursorPosition(0, WindowHeight + InputLocation);
+                Write(new string(' ', BufferWidth));
+                SetCursorPosition(0, WindowHeight + InputLocation);
+                await PostMessage(channel.Id, planet.Id, msg).ConfigureAwait(false);
             }
 
             await Task.Delay(-1);
@@ -93,13 +98,21 @@ namespace ValourCLI
         public static async Task OnRelay(string data)
         {
             PlanetMessage message = JsonConvert.DeserializeObject<PlanetMessage>(data);
+            messages.Add(message, message.Content.Split('\n').Length);
+            int height = messages.Values.Sum();
+            SetCursorPosition(0, height);
             message.Author = await message.GetAuthorAsync();
-
             message.Channel = await message.GetChannelAsync();
             message.Planet = await message.GetPlanetAsync();
-            CommandContext ctx = new();
-            await ctx.Set(message);
-            WriteLine($"{ctx.Member.Nickname} {ctx.Message.TimeSent.ToLocalTime().ToShortTimeString()}: {ctx.Message.Content}");
+            //CommandContext ctx = new();
+            //await ctx.Set(message);
+            WriteLine($"{message.Author.Nickname} {message.TimeSent.ToLocalTime().ToShortTimeString()}: {message.Content}");
+            SetCursorPosition(CursorLeft, WindowHeight);
+
+            if (WindowHeight < height)
+            {
+                InputLocation = height - WindowHeight;
+            }
         }
 
         public static async Task Start(string email, string password)
